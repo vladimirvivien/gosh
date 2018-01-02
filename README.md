@@ -3,7 +3,7 @@
 `Gosh` (or Go shell) is a framework that uses Go's plugin system to create
 for building interactive console-based shell programs.  A gosh shell is
 comprised of a collection of Go plugins which implement one or more commands.
-When `gosh` starts, it searches director `./plugins` for available shared object
+When `gosh` starts, it searches directory `./plugins` for available shared object
 files that implement command plugins.
 
 ## Getting started
@@ -106,7 +106,7 @@ The following shows example command file [plugins/testcmd.go](./plugins/testcmd.
 two commands via types `helloCmd` and `goodbyeCmd`. The commands are exported via type `testCmds` using
 method `Registry()`:
 
-```
+```go
 package main
 
 import (
