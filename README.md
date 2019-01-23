@@ -13,7 +13,7 @@ files that implement command plugins.
 * Go 1.8 or above
 * Linux (for now)
 
-Gosh makes it easy to create a shell programs.  First, download or clone this 
+Gosh makes it easy to create shell programs.  First, download or clone this 
 repository.  For a quick start, run the following:
 
 ```bash
