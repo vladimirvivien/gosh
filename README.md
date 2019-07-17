@@ -11,7 +11,8 @@ files that implement command plugins.
 #### Pre-requisites
 
 * Go 1.8 or above
-* Linux (for now)
+* Linux
+* Mac OSX
 
 Gosh makes it easy to create shell programs.  First, download or clone this 
 repository.  For a quick start, run the following:

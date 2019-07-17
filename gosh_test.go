@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	testPluginsDir = "../plugins"
+	testPluginsDir = "./plugins"
 )
 
 func TestShellNew(t *testing.T) {
 	shell := New()
-	if shell.pluginsDir != pluginsDir {
+	if shell.pluginsDir != testPluginsDir {
 		t.Error("pluginsDir not set")
 	}
 }
@@ -49,10 +49,10 @@ func TestShellHandle(t *testing.T) {
 
 	helloOut := bytes.NewBufferString("")
 	shell.ctx = context.WithValue(context.TODO(), "gosh.stdout", helloOut)
-	if err := shell.handle("testhello"); err == nil {
+	if _, err := shell.handle(shell.ctx, "testhello"); err == nil {
 		t.Error("this test should have failed with command not found")
 	}
-	if err := shell.handle("hello"); err != nil {
+	if _, err := shell.handle(shell.ctx, "hello"); err != nil {
 		t.Error(err)
 	}
 	printedOut := strings.TrimSpace(helloOut.String())
@@ -62,7 +62,7 @@ func TestShellHandle(t *testing.T) {
 
 	byeOut := bytes.NewBufferString("")
 	shell.ctx = context.WithValue(context.TODO(), "gosh.stdout", byeOut)
-	if err := shell.handle("goodbye"); err != nil {
+	if _, err := shell.handle(shell.ctx, "goodbye"); err != nil {
 		t.Error(err)
 	}
 	printedOut = strings.TrimSpace(byeOut.String())
