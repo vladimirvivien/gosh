@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path"
 	"plugin"
 	"regexp"
 	"strings"
+	"syscall"
 
 	"github.com/vladimirvivien/gosh/api"
 )
@@ -184,7 +186,10 @@ func main() {
 		}
 	}(shell.ctx, shell)
 
-	// wait
-	// TODO: sig handling
-	select {}
+	sigs := make(chan os.Signal)
+	signal.Notify(sigs, syscall.SIGINT)
+	select {
+	case <-sigs:
+		cancel()
+	}
 }
