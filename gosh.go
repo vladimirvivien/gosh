@@ -110,16 +110,20 @@ func (gosh *Goshell) Open(r *bufio.Reader) {
 	for {
 		// start a goroutine to get input from the user
 		go func(ctx context.Context, input chan<- string) {
-			// TODO: future enhancement is to capture input key by key
-			// to give command granular notification of key events.
-			// This could be used to implement command autocompletion.
-			fmt.Fprintf(ctx.Value("gosh.stdout").(io.Writer), "%s ", api.GetPrompt(loopCtx))
-			line, err := r.ReadString('\n')
-			if err != nil {
-				fmt.Fprintf(ctx.Value("gosh.stderr").(io.Writer), "%v\n", err)
+			for {
+				// TODO: future enhancement is to capture input key by key
+				// to give command granular notification of key events.
+				// This could be used to implement command autocompletion.
+				fmt.Fprintf(ctx.Value("gosh.stdout").(io.Writer), "%s ", api.GetPrompt(loopCtx))
+				line, err := r.ReadString('\n')
+				if err != nil {
+					fmt.Fprintf(ctx.Value("gosh.stderr").(io.Writer), "%v\n", err)
+					continue
+				}
+
+				input <- line
 				return
 			}
-			input <- line
 		}(loopCtx, line)
 
 		// wait for input or cancel
