@@ -5,12 +5,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path"
 	"plugin"
 	"regexp"
 	"strings"
+	"syscall"
 
 	"github.com/vladimirvivien/gosh/api"
 )
@@ -23,15 +26,19 @@ type Goshell struct {
 	ctx        context.Context
 	pluginsDir string
 	commands   map[string]api.Command
+	closed     chan struct{}
 }
 
+// New returns a new shell
 func New() *Goshell {
 	return &Goshell{
 		pluginsDir: api.PluginsDir,
 		commands:   make(map[string]api.Command),
+		closed:     make(chan struct{}),
 	}
 }
 
+// Init initializes the shell with the given context
 func (gosh *Goshell) Init(ctx context.Context) error {
 	gosh.ctx = ctx
 	gosh.printSplash()
@@ -94,6 +101,49 @@ Y8b d88P
  "Y88P"
  
  `)
+}
+
+// Open opens the shell for the given reader
+func (gosh *Goshell) Open(r *bufio.Reader) {
+	loopCtx := gosh.ctx
+	line := make(chan string)
+	for {
+		// start a goroutine to get input from the user
+		go func(ctx context.Context, input chan<- string) {
+			for {
+				// TODO: future enhancement is to capture input key by key
+				// to give command granular notification of key events.
+				// This could be used to implement command autocompletion.
+				fmt.Fprintf(ctx.Value("gosh.stdout").(io.Writer), "%s ", api.GetPrompt(loopCtx))
+				line, err := r.ReadString('\n')
+				if err != nil {
+					fmt.Fprintf(ctx.Value("gosh.stderr").(io.Writer), "%v\n", err)
+					continue
+				}
+
+				input <- line
+				return
+			}
+		}(loopCtx, line)
+
+		// wait for input or cancel
+		select {
+		case <-gosh.ctx.Done():
+			close(gosh.closed)
+			return
+		case input := <-line:
+			var err error
+			loopCtx, err = gosh.handle(loopCtx, input)
+			if err != nil {
+				fmt.Fprintf(loopCtx.Value("gosh.stderr").(io.Writer), "%v\n", err)
+			}
+		}
+	}
+}
+
+// Closed returns a channel that closes when the shell has closed
+func (gosh *Goshell) Closed() <-chan struct{} {
+	return gosh.closed
 }
 
 func (gosh *Goshell) handle(ctx context.Context, cmdLine string) (context.Context, error) {
@@ -162,29 +212,14 @@ func main() {
 		fmt.Print("\n\nNo commands found")
 	}
 
-	// shell loop
-	go func(shellCtx context.Context, shell *Goshell) {
-		lineReader := bufio.NewReader(os.Stdin)
-		loopCtx := shellCtx
-		for {
-			fmt.Printf("%s ", api.GetPrompt(loopCtx))
-			line, err := lineReader.ReadString('\n')
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			// TODO: future enhancement is to capture input key by key
-			// to give command granular notification of key events.
-			// This could be used to implement command autocompletion.
-			c, err := shell.handle(loopCtx, line)
-			loopCtx = c
-			if err != nil {
-				fmt.Printf("%v\n", err)
-			}
-		}
-	}(shell.ctx, shell)
+	go shell.Open(bufio.NewReader(os.Stdin))
 
-	// wait
-	// TODO: sig handling
-	select {}
+	sigs := make(chan os.Signal)
+	signal.Notify(sigs, syscall.SIGINT)
+	select {
+	case <-sigs:
+		cancel()
+		<-shell.Closed()
+	case <-shell.Closed():
+	}
 }
