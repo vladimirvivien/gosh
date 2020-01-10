@@ -41,7 +41,6 @@ func New() *Goshell {
 // Init initializes the shell with the given context
 func (gosh *Goshell) Init(ctx context.Context) error {
 	gosh.ctx = ctx
-	gosh.printSplash()
 	return gosh.loadCommands()
 }
 
@@ -83,24 +82,6 @@ func (gosh *Goshell) loadCommands() error {
 		gosh.ctx = context.WithValue(gosh.ctx, "gosh.commands", gosh.commands)
 	}
 	return nil
-}
-
-// TODO delegate splash to a plugin
-func (gosh *Goshell) printSplash() {
-	fmt.Println(`	
-                        888      
-                        888      
-                        888      
- .d88b.  .d88b. .d8888b 88888b.  
-d88P"88bd88""88b88K     888 "88b 
-888  888888  888"Y8888b.888  888 
-Y88b 888Y88..88P     X88888  888 
- "Y88888 "Y88P"  88888P'888  888 
-     888                         
-Y8b d88P                         
- "Y88P"
- 
- `)
 }
 
 // Open opens the shell for the given reader
@@ -196,7 +177,7 @@ func main() {
 
 	shell := New()
 	if err := shell.Init(ctx); err != nil {
-		fmt.Print("\n\nfailed to initialize:", err)
+		fmt.Println("\n\nfailed to initialize:\n", err)
 		os.Exit(1)
 	}
 
