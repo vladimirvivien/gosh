@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Merith-TK/gosh/api"
+	"github.com/vladimirvivien/gosh/api"
 )
 
 type splashCmd string
